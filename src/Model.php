@@ -4,8 +4,8 @@ namespace JbSchmitt\model;
 
 use BadMethodCallException;
 use InvalidArgumentException;
+use JbSchmitt\model\Exception\NullValuesException;
 use JsonSerializable;
-use ModelDB;
 
 abstract class Model implements JsonSerializable {
     protected static string $primary_key = "id";
@@ -45,7 +45,7 @@ abstract class Model implements JsonSerializable {
      * @return void
      */
     public function fromArray(array $array) {
-        foreach (static::$foreigns as $key => $value) {
+/*        foreach (static::$foreigns as $key => $value) {
             if (array_key_exists($key, $array)) {
                 if ($array[$key] instanceof $value[1]) {
                     $this->relatedModels[$key] = $array[$key];
@@ -53,9 +53,9 @@ abstract class Model implements JsonSerializable {
                 }
                 unset($array[$key]);
             }
-        }
+        } */
         $this->data = $array + $this->data;
-        $this->data = array_intersect_key($this->data, static::$columns += [static::$primary_key => ""]);
+        $this->data = array_intersect_key($this->data, static::TABLE::columns());
     }
     
     /**
@@ -123,40 +123,11 @@ abstract class Model implements JsonSerializable {
         }
 
         // build the full statement (still using placeholders)
-        $sql = "SELECT * from " . static::$table . ' WHERE ' . implode(' AND ', $wherePredicates) . ';';
-        return new ModelCollection(static::class, Model::selecetAll($sql, $bindValues));
+        $sql = "SELECT * from " . static::TABLE::TABLE . ' WHERE ' . implode(' AND ', $wherePredicates) . ';';
+        return new ModelCollection(static::class, ModelDB::selecetAll($sql, $bindValues));
     }
 
     
-    
-    /**
-     * __call
-     *
-     * @param  mixed $name
-     * @param  mixed $arguments
-     * @return void
-     */
-    public function __call($name, $arguments) {
-        if (strpos($name, 'get') === 0) {
-            $key = lcfirst(substr($name, 3));
-            if (array_key_exists($key,static::$columns)) {
-                return $this->data[$key];
-            }
-            if (array_key_exists($key, static::$foreigns)) {
-                return $this->relatedModels[$key];
-            }
-            if (array_key_exists($key, static::$linkedForeigns)) {
-                return $this->getLinkedForeign($key);
-            }
-        }
-
-        if (strpos($name, 'set') === 0) {
-            return $this->set($name, $arguments);
-        }
-
-        throw new BadMethodCallException(sprintf('Called undefined method: %s.', $name));
-    }
-
     private function getLinkedForeign($class) {
         $sql = sprintf(static::LINKEDSQL, $class, static::$linkedForeigns[$class]);
 
@@ -169,41 +140,15 @@ abstract class Model implements JsonSerializable {
         return $return;
     }
 
-    private function set($name, $arguments) {
-        $key = lcfirst(substr($name, 3));
-        // name refers to column
-        if (array_key_exists($key, static::$columns)) {
-            $this->data[$key] = Cast::cast(static::$columns[$key], $arguments[0]);
-            $this->modifiedColumns[$key] = TRUE;
-            return;
-        }
-        // name refers to Object
-        if (array_key_exists($key, static::$foreigns)) {
-            // is the right object type
-            if ($arguments[0] instanceof static::$foreigns[$key][1]) {
-                $this->relatedModels[$key] = $arguments[0];
-                // set foreign column
-                $column = static::$foreigns[$key][0];
-                $this->data[$column] = $arguments[0]->getPK();
-                // add to modified columns
-                $this->modifiedColumns[$column] = TRUE;
-                return;
-            }
-        }
-        throw new BadMethodCallException(sprintf('Called undefined method: %s.', $name));
-    }
 
     /**
      * find by id
      *
-     * @param  int   $id      id
-     * @param  array $columns columns
+     * @param  mixed $pk      id
+     * @param  array       $columns columns
      * @return obj
      */
-    public static function find(int $id, $columns = ['*']) {
-        $sql = sprintf("SELECT %s FROM " . static::$table . " WHERE " . static::$primary_key . "=?", 
-                implode(', ', $columns));
-        return new static(ModelDB::selecetAll($sql, [$id]), FALSE);
+    public static function find(mixed $pk, $columns = ['*']) {
     }
     
     
@@ -214,7 +159,10 @@ abstract class Model implements JsonSerializable {
      */
     public function insert():bool {
         try {
-            $insert = ModelDB::insert(static::$table, $this->toArray()) > 0;
+            if ($this->isNotNullValues())
+                throw new NullValuesException("Some values are null although this isn't allowed", 1);
+                
+            $insert = ModelDB::insert(static::TABLE::TABLE, $this->toArray()) > 0;
             $id = (int) ModelDB::getLastInsertId();
             if (!empty($id))
                 $this->data[static::$primary_key] = $id;
@@ -224,7 +172,12 @@ abstract class Model implements JsonSerializable {
             return FALSE;
         }
     }
-
+    
+    /**
+     * inserts new Object or updates existing one
+     *
+     * @return bool false if nothing to update
+     */
     public function save():bool {
         if ($this->isNew) {
             return $this->insert();
@@ -246,14 +199,17 @@ abstract class Model implements JsonSerializable {
     /**
      * updates modified values in db
      *
-     * @return void
+     * @return int
      */
     public function update():int {
         if (empty($this->modifiedColumns))
             return 0;
         $modifiedColumns = array_intersect_key($this->data, $this->modifiedColumns);
-        $update = ModelDB::update(static::$table, $modifiedColumns, 
-            [static::$primary_key => $this->{static::$primary_key}]);
+        $where = array_intersect_key($this->data, static::TABLE::primaryKey());
+        var_dump(static::TABLE::primaryKey());
+        var_dump($where);
+        $update = ModelDB::update(static::TABLE::TABLE, $modifiedColumns, 
+            $where);
         $this->modifiedColumns = [];
         return $update;
     }
