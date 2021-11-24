@@ -8,18 +8,18 @@ use JbSchmitt\model\ModelDB;
  * TableScript
  */
 class TableScript  {
-    
+
     /**
      * __construct
      *
-     * @param  mixed $databaseName
-     * @param  mixed $tableName
+     * @param  string $databaseName database name
+     * @param  string $tableName    table name
      * @return void
      */
     public function __construct(private string $databaseName, private string $tableName) { }
     
     private const SQL_TABLES = "SHOW COLUMNS FROM `%s`;";
-    private const SQL_FOREIGN_KEYS = "SELECT * from INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = 'reservation' AND REFERENCED_TABLE_NAME IS NOT NULL";
+    private const SQL_FOREIGN_KEYS = "SELECT * from INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND REFERENCED_TABLE_NAME IS NOT NULL";
 
     const START = <<<PHP
         <?php
@@ -64,14 +64,18 @@ class TableScript  {
                 }
                 return static::\$self->COLUMNS;
             }
-
-            public static function pk() {
+            
+            /**
+             * array of primary key column(s)
+             *
+             * @return array
+             */
+            public static function primaryKey() {
                 if (empty(self::\$self)) {
                     static::\$self = new self();
                 }
                 return static::\$self->PK;
             }
-
         }
         PHP;
     
@@ -81,7 +85,13 @@ class TableScript  {
      * @return void
      */
     public function output() {
-        return sprintf(self::START, $this->tableName, ucfirst($this->tableName), $this->tableName, $this->columns());
+        return sprintf(
+            self::START, 
+            $this->tableName, 
+            ucfirst($this->tableName), 
+            $this->tableName, 
+            $this->columns()
+        );
     }
 
     public function createFile(string $dir) {
@@ -90,10 +100,10 @@ class TableScript  {
 
     private function columns() {
         $tableData = ModelDB::selecetAll(sprintf(self::SQL_TABLES, $this->tableName));
-        $fkData = ModelDB::selecetAll(sprintf(self::SQL_FOREIGN_KEYS, $this->databaseName));
+        $fkData = ModelDB::selecetAll(sprintf(self::SQL_FOREIGN_KEYS, $this->databaseName, $this->tableName)) ?? [];
         $cols = <<<PHP
             \$this->COLUMNS = [
-                                            // col        type      null    size default PK
+                                        // col        type      null    size default PK
         %s
                 ];
 
@@ -101,7 +111,7 @@ class TableScript  {
                  * Primary key columns reference
                  */
                 \$this->PK = [
-        %s
+                    %s
                 ];
         PHP;
 
@@ -128,7 +138,7 @@ class TableScript  {
 
             if ($isPk == "TRUE") {
                 $pkString .= <<<PHP
-                            '{$value['Field']}',
+                '{$value['Field']}', 
                 PHP;
             }
 
