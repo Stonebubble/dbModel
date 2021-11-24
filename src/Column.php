@@ -23,7 +23,7 @@ class Column {
     public function __construct(
         public string $name, 
         public int $type, 
-        public bool $isNotNull = FALSE, 
+        public bool $isNull = FALSE, 
         public ?int $size = NULL, 
         public $defaultValue = NULL, 
         public bool $pk = FALSE, 

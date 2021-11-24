@@ -19,7 +19,7 @@ class Type {
     const BOOLEAN = 100;
 
     const BIT = 101;
-    const TINTYINT = 102;
+    const TINYINT = 102;
     const SMALLINT = 103;
     const MEDIUMINT = 104;
     const INT = 105;
@@ -37,4 +37,21 @@ class Type {
 
     const ENUM = 401;
     const SET = 402;
+    
+    /**
+     * gives typecast hint
+     *
+     * @param  mixed $type
+     * @return string
+     */
+    public static function toPhpType(int $type):string {
+        if (0 < $type && $type < 100) {
+            return "string";
+        } elseif (200 < $type && $type < 300) {
+            return "float";
+        } elseif (101 < $type && $type < 200) {
+            return "int";
+        }
+        return "";
+    }
 }

@@ -32,7 +32,7 @@ class ModelDB {
         if (isset(self::$pdo))
             return;
             
-        $c = include_once $_SERVER['DOCUMENT_ROOT']  . '/../config.php';
+        $c = include $_SERVER['DOCUMENT_ROOT']  . '/../config.php';
         $dsn = "mysql:host=" . $c['db_host'] . ";dbname=" . $c['db_name'] . ";charset=" . $c['db_charset'] . ";";
         try {
             self::$pdo = new PDO($dsn, 
@@ -147,7 +147,7 @@ class ModelDB {
      *
      * @param  mixed $query      the SQL query to select with
      * @param  mixed $bindValues values to replace ?
-     * @return void
+     * @return array
      */
     public static function selectGroup(string $query, ?array $bindValues = NULL) {
         return self::_selectInternal(function ($stmt) {
