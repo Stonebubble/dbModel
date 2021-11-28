@@ -67,7 +67,7 @@ class ModelBaseScript {
     /**
      * creates or replaces file
      *
-     * @param string $dir
+     * @param string $dir path to directory
      * @return void
      */
     public function createFile(string $dir) {
@@ -186,6 +186,9 @@ class ModelBaseScript {
                 );
             }
         PHP;
+        if (!empty($GLOBALS['configPath'])) {
+            include_once $GLOBALS['configPath'] . "/app/Model/Table/" . ucfirst($this->tableName) . "Table.php";
+        }
         $table = "TicketTool\Model\Table\\" . ucfirst($this->tableName) . "Table";
         $nullString = [];
         foreach ($table::columns() as $key => $value) {

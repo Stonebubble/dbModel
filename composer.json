@@ -9,8 +9,12 @@
         }
     ],
     "require": {
+        "php": ">=8.0",
         "delight-im/db": "^1.3"
     },
+    "bin": [
+        "bin/dbmodel"
+    ],
     "autoload": {
         "psr-4": {
             "JbSchmitt\\model\\": "src/"

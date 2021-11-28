@@ -28,11 +28,11 @@ class ModelDB {
      *
      * @return void
      */
-    public static function constructStatic() {
+    public static function constructStatic($pathToConfig) {
         if (isset(self::$pdo))
             return;
             
-        $c = include $_SERVER['DOCUMENT_ROOT']  . '/../config.php';
+        $c = include $pathToConfig;
         $dsn = "mysql:host=" . $c['db_host'] . ";dbname=" . $c['db_name'] . ";charset=" . $c['db_charset'] . ";";
         try {
             self::$pdo = new PDO($dsn, 
@@ -408,5 +408,3 @@ class ModelDB {
     }
 
 }
-
-ModelDB::constructStatic();
