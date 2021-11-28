@@ -20,12 +20,10 @@ class ModelCollection implements JsonSerializable {
      * @return void
      * @throws InvalidArgumentException if $class isn't of type Model
      */
-    public function __construct($className, ?array $modelArray = []) {
-        if (!($className instanceof Model))
-            throw new InvalidArgumentException($className . " is not of type Model");
-
-            $this->array = $modelArray;
-            $this->className;
+    public function __construct($className, ?array $modelArray = [], $isNew = FALSE) {
+        $this->array = $modelArray ?? [];
+        $this->className = $className;
+        $this->isNew = $isNew;
     }
     
     /**
@@ -45,7 +43,7 @@ class ModelCollection implements JsonSerializable {
     public function toModels():array {
         $data = [];
         foreach ($this->array as $value) {
-            $data[] = new $this->className($value);
+            $data[] = new $this->className($value, $this->isNew);
         }
         return $data;
     }
