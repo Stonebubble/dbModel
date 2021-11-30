@@ -31,7 +31,11 @@
 </rule>
 <rule ref="MySource.PHP.EvalObjectFactory"/>
 <rule ref="MySource.PHP.AjaxNullComparison"/>
-<rule ref="PEAR.Commenting.FunctionComment"/>
+<rule ref="PEAR.Commenting.FunctionComment">
+    <properties>
+        <property name="minimumVisibility" value="protected" />
+    </properties>
+</rule>
 <rule ref="PEAR.Commenting.InlineComment"/>
 <rule ref="PEAR.ControlStructures.ControlSignature"/>
 <rule ref="PEAR.ControlStructures.MultiLineCondition"/>

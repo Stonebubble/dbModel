@@ -6,5 +6,6 @@ return [
     'db_password' => "",
     'db_name' => "",
     'db_charset' => "utf8",
-    'production' => FALSE
+    'production' => FALSE,
+    'model_path' => "/app/Model"
 ];
