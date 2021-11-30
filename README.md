@@ -20,7 +20,7 @@ It will ask you for a config location and relative to that a folder to include a
 
 ## Documentation
 Every Table class is static and implements:
-```
+```php
 /**
  * array of primary key column(s)
  *
@@ -40,7 +40,7 @@ public static function columns():array
 
 Also each Base model class provides:
 * getter and setter for each column
-* update, insert, save, isNotNullValues and ::where methods
+* `update()`, `insert()`, `save()`, `isNotNullValues()` and `::where($array)` methods
 
 ## Example
 A Table "reservation" with these columns exists:
@@ -50,11 +50,11 @@ A Table "reservation" with these columns exists:
 | 9eWc | 1 | 2021-11-21 00:49:59 |
 | ...  | ... | ... |
 <br>
-```
+
+```php
 $reservation = Reservation::where(['code' => "a1Hq"])->toModels()[0];
 // where returns a Collection which can be converted to an array or the Model
 $reservation->setActive(1);
 $reservation->save(); 
 // performs update, because it recognizes, that it already exists
-
 ```
